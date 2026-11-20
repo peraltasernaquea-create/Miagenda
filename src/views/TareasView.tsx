@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check, Pencil, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { PriorityIndicator } from '../components/PriorityIndicator';
-import { CourseTask } from '../types';
+import { CourseTask, TaskPriority } from '../types';
 import { formatShortDate, getRelativeDayLabel, getTodayISO } from '../utils/dateUtils';
 
 interface TareasViewProps {
@@ -13,6 +13,7 @@ interface TareasViewProps {
 }
 
 type FilterState = 'todas' | 'pendientes' | 'completadas';
+type PriorityFilter = 'todas' | TaskPriority;
 
 export function TareasView({
   tasks,
@@ -22,6 +23,7 @@ export function TareasView({
   onToggleTaskStatus,
 }: TareasViewProps) {
   const [filter, setFilter] = useState<FilterState>('todas');
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('todas');
   const [searchQuery, setSearchQuery] = useState('');
   const todayISO = getTodayISO();
 
@@ -33,6 +35,10 @@ export function TareasView({
       if (filter === 'pendientes') return t.status === 'pendiente';
       if (filter === 'completadas') return t.status === 'completada';
       return true;
+    })
+    .filter((t) => {
+      if (priorityFilter === 'todas') return true;
+      return t.priority === priorityFilter;
     })
     .filter((t) => {
       const q = searchQuery.trim().toLowerCase();
@@ -47,6 +53,8 @@ export function TareasView({
       if (a.status !== b.status) return a.status === 'pendiente' ? -1 : 1;
       return a.dueDate.localeCompare(b.dueDate);
     });
+
+  const hasActiveFilters = searchQuery.trim().length > 0 || priorityFilter !== 'todas';
 
   return (
     <div className="space-y-5">
@@ -83,7 +91,68 @@ export function TareasView({
           />
         </div>
 
-        {/* Segmented Filter Tabs */}
+        {/* Priority Filter Selector */}
+        <div>
+          <span className="block text-xs font-semibold text-slate-600 mb-1.5">
+            Filtrar por prioridad
+          </span>
+          <div
+            role="group"
+            aria-label="Filtrar por prioridad"
+            className="grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-xl"
+          >
+            <button
+              type="button"
+              onClick={() => setPriorityFilter('todas')}
+              aria-pressed={priorityFilter === 'todas'}
+              className={`min-h-[44px] px-2 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                priorityFilter === 'todas'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Todas
+            </button>
+            <button
+              type="button"
+              onClick={() => setPriorityFilter('alta')}
+              aria-pressed={priorityFilter === 'alta'}
+              className={`min-h-[44px] px-2 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                priorityFilter === 'alta'
+                  ? 'bg-white text-red-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Alta
+            </button>
+            <button
+              type="button"
+              onClick={() => setPriorityFilter('media')}
+              aria-pressed={priorityFilter === 'media'}
+              className={`min-h-[44px] px-2 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                priorityFilter === 'media'
+                  ? 'bg-white text-amber-800 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Media
+            </button>
+            <button
+              type="button"
+              onClick={() => setPriorityFilter('baja')}
+              aria-pressed={priorityFilter === 'baja'}
+              className={`min-h-[44px] px-2 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                priorityFilter === 'baja'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Baja
+            </button>
+          </div>
+        </div>
+
+        {/* Segmented Status Filter Tabs */}
         <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl">
           <button
             type="button"
@@ -125,17 +194,20 @@ export function TareasView({
       {filteredTasks.length === 0 ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3">
           <p className="text-base text-slate-600">
-            {searchQuery
-              ? 'No se encontraron tareas con esa búsqueda.'
+            {hasActiveFilters
+              ? 'No se encontraron actividades con los filtros seleccionados.'
               : 'No hay tareas en esta categoría.'}
           </p>
-          {searchQuery ? (
+          {hasActiveFilters ? (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setSearchQuery('');
+                setPriorityFilter('todas');
+              }}
               className="min-h-[48px] px-5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50"
             >
-              Limpiar búsqueda
+              Limpiar filtros
             </button>
           ) : (
             <button
